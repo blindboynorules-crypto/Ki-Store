@@ -27,7 +27,6 @@
             --glass-border: rgba(255, 255, 255, 0.1);
             --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
             --accent-gradient: linear-gradient(135deg, #00C6FB 0%, #005BEA 100%);
-            /* Background gradient is now handled in body animation */
             --text-primary: #f3f4f6;
             --text-secondary: #9ca3af;
         }
@@ -40,25 +39,19 @@
         }
 
         html {
-            /* Fix white background appearing when overscrolling on mobile */
             background-color: #0f172a;
             height: 100%;
         }
 
         body { 
             font-family: 'Inter', system-ui, sans-serif; 
-            
-            /* Deep Animated Background */
             background: linear-gradient(-45deg, #0f172a, #1e1b4b, #172554, #0f172a);
             background-size: 400% 400%;
             animation: gradient-animation 15s ease infinite;
-
             min-height: 100vh;
             color: var(--text-primary);
             padding-bottom: 80px;
             padding-top: max(env(safe-area-inset-top), 20px);
-            
-            /* Prevent elastic scrolling showing white background */
             overscroll-behavior-y: none; 
         }
 
@@ -363,7 +356,7 @@
     <!-- JAVASCRIPT LOGIC -->
     <script>
         // --- INITIAL STATE ---
-        const COMMON_SIZES = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "Free"];
+        const COMMON_SIZES = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL"];
         const DEFAULT_SIZES = ["S", "M", "L", "XL", "2XL"];
         const DEFAULT_INV = [
             { name: "Màu 1", sizes: [0, 0, 0, 0, 0] },
@@ -533,6 +526,35 @@
                 btn.onclick = () => toggleSize(size);
                 grid.appendChild(btn);
             });
+
+            // ADD PLUS BUTTON
+            const plusBtn = document.createElement('button');
+            plusBtn.className = "py-2 rounded-lg font-bold text-sm transition border bg-green-500/10 text-green-400 border-green-500/30 hover:bg-green-500/20";
+            plusBtn.innerHTML = '<i class="fa-solid fa-plus"></i>';
+            plusBtn.onclick = autoAddNextXL;
+            grid.appendChild(plusBtn);
+        }
+
+        function autoAddNextXL() {
+            // Find max XL currently in temp or common
+            let maxXL = 1; // Default starts looking from XL
+            
+            const checkSize = (s) => {
+                if(s === 'XL') maxXL = Math.max(maxXL, 1);
+                const match = s.match(/^(\d+)XL$/);
+                if(match) maxXL = Math.max(maxXL, parseInt(match[1]));
+            };
+
+            COMMON_SIZES.forEach(checkSize);
+            tempSelectedSizes.forEach(checkSize);
+
+            // Generate next size
+            const nextSize = (maxXL + 1) + "XL";
+            
+            if(!tempSelectedSizes.includes(nextSize)) {
+                tempSelectedSizes.push(nextSize);
+                renderSizeGrid();
+            }
         }
 
         function toggleSize(size) {
