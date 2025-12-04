@@ -295,19 +295,27 @@
     </div>
 
     <!-- MODALS -->
-    <!-- Size Modal (UPDATED WITH CHIPS) -->
+    <!-- Size Modal (UPDATED WITH CATEGORIES) -->
     <div id="size-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm transition-opacity">
-        <div class="glass-panel w-full max-w-md p-6 bg-[#0f172a] shadow-2xl transform scale-100 border border-white/10">
-            <h3 class="text-xl font-bold mb-2 text-white">Chỉnh sửa Size</h3>
-            <p class="text-sm text-gray-400 mb-4">Chọn các size bạn muốn sử dụng cho kho hàng.</p>
+        <div class="glass-panel w-full max-w-md p-6 bg-[#0f172a] shadow-2xl transform scale-100 border border-white/10 flex flex-col max-h-[90vh]">
+            <h3 class="text-xl font-bold mb-4 text-white">Chỉnh sửa Size</h3>
+            
+            <!-- Category Tabs -->
+            <div class="grid grid-cols-3 gap-2 mb-4 p-1 bg-white/5 rounded-xl">
+                <button onclick="setPreset('STD_SHIRT')" id="tab-STD_SHIRT" class="py-2 text-xs font-bold rounded-lg transition text-gray-400 hover:text-white">Áo (Quốc tế)</button>
+                <button onclick="setPreset('KR_SHIRT')" id="tab-KR_SHIRT" class="py-2 text-xs font-bold rounded-lg transition text-gray-400 hover:text-white">Áo (Hàn)</button>
+                <button onclick="setPreset('PANTS')" id="tab-PANTS" class="py-2 text-xs font-bold rounded-lg transition text-gray-400 hover:text-white">Size Quần</button>
+            </div>
+            
+            <p class="text-sm text-gray-400 mb-2">Chọn các size bạn muốn sử dụng:</p>
             
             <!-- Size Chips Grid -->
-            <div id="size-grid" class="grid grid-cols-4 gap-3 mb-6">
+            <div id="size-grid" class="grid grid-cols-4 gap-3 mb-4 overflow-y-auto custom-scroll pr-1">
                 <!-- Buttons injected by JS -->
             </div>
 
             <!-- Custom Size Input -->
-            <div class="flex gap-2 mb-6">
+            <div class="flex gap-2 mb-6 mt-auto">
                 <input type="text" id="custom-size-input" class="bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-white outline-none focus:border-blue-500 w-full text-sm" placeholder="Thêm size khác (VD: 29, 30...)">
                 <button onclick="addCustomSize()" class="bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg transition"><i class="fa-solid fa-plus"></i></button>
             </div>
@@ -356,7 +364,14 @@
     <!-- JAVASCRIPT LOGIC -->
     <script>
         // --- INITIAL STATE ---
-        const COMMON_SIZES = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL"];
+        // Size Presets
+        const SIZE_PRESETS = {
+            STD_SHIRT: ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL"],
+            KR_SHIRT: ["85", "90", "95", "100", "105", "110", "115", "120"],
+            PANTS: ["28", "29", "30", "31", "32", "33", "34", "36", "38", "40"]
+        };
+        let currentPreset = 'STD_SHIRT';
+
         const DEFAULT_SIZES = ["S", "M", "L", "XL", "2XL"];
         const DEFAULT_INV = [
             { name: "Màu 1", sizes: [0, 0, 0, 0, 0] },
@@ -500,24 +515,54 @@
         function addCustomer() { state.customers.push({ id: Date.now(), name: `Khách ${state.customers.length+1}`, qty: 0 }); saveData(); }
         function removeCustomer(idx) { state.customers.splice(idx, 1); saveData(); }
 
-        // --- SIZE MODAL LOGIC (UPDATED) ---
+        // --- SIZE MODAL LOGIC (UPDATED WITH CATEGORIES) ---
         function openSizeModal() {
             tempSelectedSizes = [...state.sizes]; // Clone current
-            renderSizeGrid();
+            setPreset(currentPreset); // Reset view to current preset, or keep last
             document.getElementById('size-modal').classList.remove('hidden');
+        }
+
+        function setPreset(presetKey) {
+            currentPreset = presetKey;
+            
+            // Update Tab UI
+            ['STD_SHIRT', 'KR_SHIRT', 'PANTS'].forEach(key => {
+                const btn = document.getElementById(`tab-${key}`);
+                if(key === presetKey) {
+                    btn.className = "py-2 text-xs font-bold rounded-lg transition bg-blue-600 text-white shadow-lg";
+                } else {
+                    btn.className = "py-2 text-xs font-bold rounded-lg transition text-gray-400 hover:text-white hover:bg-white/10";
+                }
+            });
+
+            // When switching, we basically want to reset selection to be clean for that mode
+            // BUT user might want to mix. For simplicity and specific request, 
+            // we will CLEAR selections when switching presets to avoid clutter, 
+            // unless they match the new preset.
+            // (Optional: You can remove this line if you want to allow mixing sizes easily)
+            tempSelectedSizes = []; 
+
+            renderSizeGrid();
         }
 
         function renderSizeGrid() {
             const grid = document.getElementById('size-grid');
             grid.innerHTML = '';
             
-            // Combine Common Sizes and Current Sizes (unique)
-            const allOptions = Array.from(new Set([...COMMON_SIZES, ...tempSelectedSizes]));
+            // Get sizes from current preset
+            const presetSizes = SIZE_PRESETS[currentPreset] || [];
+            
+            // Also include any currently selected sizes that might not be in the preset (if we allowed mixing)
+            // But since we cleared tempSelectedSizes on switch, this is just for custom sizes added manually
+            const allOptions = Array.from(new Set([...presetSizes, ...tempSelectedSizes]));
+            
+            // Sort logic: complex because we mix numbers and letters. 
+            // For now, trust the preset order + custom ones at end.
             
             allOptions.forEach(size => {
                 const isSelected = tempSelectedSizes.includes(size);
                 const btn = document.createElement('button');
-                btn.className = `py-2 rounded-lg font-bold text-sm transition border ${
+                btn.className = `py-3 rounded-lg font-bold text-sm transition border ${
                     isSelected 
                     ? 'bg-blue-500 text-white border-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.5)]' 
                     : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10'
@@ -529,30 +574,54 @@
 
             // ADD PLUS BUTTON
             const plusBtn = document.createElement('button');
-            plusBtn.className = "py-2 rounded-lg font-bold text-sm transition border bg-green-500/10 text-green-400 border-green-500/30 hover:bg-green-500/20";
+            plusBtn.className = "py-3 rounded-lg font-bold text-sm transition border bg-green-500/10 text-green-400 border-green-500/30 hover:bg-green-500/20";
             plusBtn.innerHTML = '<i class="fa-solid fa-plus"></i>';
-            plusBtn.onclick = autoAddNextXL;
+            plusBtn.onclick = autoAddNext;
             grid.appendChild(plusBtn);
         }
 
-        function autoAddNextXL() {
-            // Find max XL currently in temp or common
-            let maxXL = 1; // Default starts looking from XL
-            
-            const checkSize = (s) => {
-                if(s === 'XL') maxXL = Math.max(maxXL, 1);
-                const match = s.match(/^(\d+)XL$/);
-                if(match) maxXL = Math.max(maxXL, parseInt(match[1]));
-            };
+        function autoAddNext() {
+            let nextVal = "";
 
-            COMMON_SIZES.forEach(checkSize);
-            tempSelectedSizes.forEach(checkSize);
+            if (currentPreset === 'STD_SHIRT') {
+                // Logic: Find max XL (e.g. 4XL -> 5XL)
+                let maxXL = 1;
+                const check = (s) => {
+                    if(s === 'XL') maxXL = Math.max(maxXL, 1);
+                    const match = s.match(/^(\d+)XL$/);
+                    if(match) maxXL = Math.max(maxXL, parseInt(match[1]));
+                };
+                SIZE_PRESETS['STD_SHIRT'].forEach(check);
+                tempSelectedSizes.forEach(check); // Check selected too
+                nextVal = (maxXL + 1) + "XL";
+            } 
+            else if (currentPreset === 'KR_SHIRT') {
+                // Logic: Find max number and add 5 (e.g. 120 -> 125)
+                let maxNum = 0;
+                const check = (s) => {
+                    const n = parseInt(s);
+                    if(!isNaN(n)) maxNum = Math.max(maxNum, n);
+                };
+                SIZE_PRESETS['KR_SHIRT'].forEach(check);
+                tempSelectedSizes.forEach(check);
+                if(maxNum === 0) maxNum = 80; // Safety
+                nextVal = (maxNum + 5).toString();
+            }
+            else if (currentPreset === 'PANTS') {
+                // Logic: Find max number and add 2 (e.g. 40 -> 42)
+                let maxNum = 0;
+                const check = (s) => {
+                    const n = parseInt(s);
+                    if(!isNaN(n)) maxNum = Math.max(maxNum, n);
+                };
+                SIZE_PRESETS['PANTS'].forEach(check);
+                tempSelectedSizes.forEach(check);
+                if(maxNum === 0) maxNum = 28;
+                nextVal = (maxNum + 2).toString();
+            }
 
-            // Generate next size
-            const nextSize = (maxXL + 1) + "XL";
-            
-            if(!tempSelectedSizes.includes(nextSize)) {
-                tempSelectedSizes.push(nextSize);
+            if(nextVal && !tempSelectedSizes.includes(nextVal)) {
+                tempSelectedSizes.push(nextVal);
                 renderSizeGrid();
             }
         }
