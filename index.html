@@ -27,19 +27,39 @@
             --glass-border: rgba(255, 255, 255, 0.1);
             --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
             --accent-gradient: linear-gradient(135deg, #00C6FB 0%, #005BEA 100%);
-            --bg-gradient: linear-gradient(160deg, #0f172a 0%, #1e1b4b 100%);
+            /* Background gradient is now handled in body animation */
             --text-primary: #f3f4f6;
             --text-secondary: #9ca3af;
         }
 
+        /* Animated Background Keyframes */
+        @keyframes gradient-animation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        html {
+            /* Fix white background appearing when overscrolling on mobile */
+            background-color: #0f172a;
+            height: 100%;
+        }
+
         body { 
             font-family: 'Inter', system-ui, sans-serif; 
-            background: var(--bg-gradient);
-            background-attachment: fixed;
+            
+            /* Deep Animated Background */
+            background: linear-gradient(-45deg, #0f172a, #1e1b4b, #172554, #0f172a);
+            background-size: 400% 400%;
+            animation: gradient-animation 15s ease infinite;
+
             min-height: 100vh;
             color: var(--text-primary);
             padding-bottom: 80px;
             padding-top: max(env(safe-area-inset-top), 20px);
+            
+            /* Prevent elastic scrolling showing white background */
+            overscroll-behavior-y: none; 
         }
 
         /* --- UTILITIES --- */
@@ -106,7 +126,8 @@
 
         /* --- PRINT STYLES --- */
         @media print {
-            body { background: white !important; color: black !important; padding: 0 !important; }
+            body { background: white !important; color: black !important; padding: 0 !important; animation: none !important; }
+            html { background-color: white !important; }
             .glass-panel { background: white !important; border: 1px solid #ddd !important; box-shadow: none !important; color: black !important; border-radius: 0 !important; }
             .no-print, button, input, .fa-trash-can, .fa-minus, .fa-xmark, .btn-secondary, .btn-liquid, #data-btn { display: none !important; }
             .print-only { display: block !important; }
@@ -121,7 +142,7 @@
 <body class="p-3 sm:p-6 lg:p-8 relative">
 
     <!-- Data Button (Top Right - FIXED) -->
-    <button id="data-btn" onclick="openDataModal()" class="fixed top-4 right-4 z-50 w-10 h-10 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white shadow-lg hover:bg-white/20 transition active:scale-95 no-print">
+    <button id="data-btn" onclick="openDataModal()" class="fixed top-6 right-6 z-50 w-10 h-10 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white shadow-lg hover:bg-white/20 transition active:scale-95 no-print">
         <i class="fa-solid fa-database text-blue-300"></i>
     </button>
 
