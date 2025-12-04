@@ -1,0 +1,5 @@
+{
+  "name": "KI STORE - Inventory Manager",
+  "description": "Smart inventory distribution software utilizing the Hare-Niemeyer algorithm for fair stock allocation.",
+  "requestFramePermissions": []
+}
